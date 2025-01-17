@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-versão: 16012025v2
+versão: 17012025v3
 autor: Rafael L
 "suporte" e consulta: GPT4o-mini (acabei usando)
 
@@ -78,7 +78,7 @@ def tira_foto():
     hora_ult_foto = data_ext
     print(f"Foto capturada: {nomefoto}")
     
-    time.sleep(1+VelOBT_atual)
+    time.sleep(1)
     # Exibir preview da foto no display por 4 segundos
     img = Image.open(nomefoto)
     img = img.resize((disp.width, disp.height))
@@ -188,11 +188,12 @@ def mostra_ALERTA_excluir():
     
 # Funcao para desligar o sistema
 def desliga_sistema():
+    fonte = ImageFont.truetype("Fontes/DS-DIGII.TTF", 22)
     disp.clear()  # Limpa o display
     img_desligar = Image.new('RGB', (disp.width, disp.height), color="black")
     draw = ImageDraw.Draw(img_desligar)
     font = ImageFont.load_default()
-    draw.text((10, 10), "Desligando...", font=font, fill="yellow")
+    draw.text((10, 10), "Desligando...", font=fonte, fill="yellow")
     disp.display(img_desligar)
     time.sleep(2)  # Exibe a mensagem por 2 segundos
     os.system("sudo shutdown now")  # Envia o comando para desligar
@@ -210,10 +211,6 @@ try:
             if modo_GALERIA:
                 if modo_EXCLUIR:
                     excluir_foto()  # Exclui a foto na galeria
-                else:
-                    # Confirmacao de exclusao
-                    mostra_ALERTA_excluir()
-                    modo_EXCLUIR = True
             else:
                 tira_foto()  # Captura a foto
                 time.sleep(0.2)
@@ -245,7 +242,7 @@ try:
             if modo_GALERIA:
                 mostra_ALERTA_excluir()  # Exibe a mensagem de alerta
                 modo_EXCLUIR = True
-                time.sleep(0.2)
+                time.sleep(0.5)
             alternar_ISO_VelOBT()  # Alterna entre ISO e Vel. Obturador
             time.sleep(0.2)
             
