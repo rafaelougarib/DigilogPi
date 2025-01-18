@@ -138,7 +138,8 @@ def excluir_foto():
     global lista_fotos, val_foto_atual, modo_EXCLUIR
     if lista_fotos and modo_EXCLUIR:
         foto_a_excluir = lista_fotos[val_foto_atual]  # Obter o caminho da foto
-        os.remove(foto_a_excluir)  # Remove o arquivo
+        caminho_foto = os.path.join(pasta_fotos, fotos[val_foto_atual]) # Caminho real + pasta (DCIM)
+        os.remove(caminho_foto)  # Remove o arquivo
         lista_fotos.pop(val_foto_atual)  # Remove da lista
         print(f"Foto excluida: {foto_a_excluir}")
         
