@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-versão: 17012025v3
+versão: 18012025v4
 autor: Rafael L
 "suporte" e consulta: GPT4o-mini (acabei usando)
 
@@ -133,28 +133,36 @@ def mostra_galeria():
         
         disp.display(img)
 
-# Funcao para excluir a foto
+# Funcao para excluir a foto (usando a tática da galeria)
 def excluir_foto():
-    global lista_fotos, val_foto_atual, modo_EXCLUIR
-    if lista_fotos and modo_EXCLUIR:
-        foto_a_excluir = lista_fotos[val_foto_atual]  # Obter o caminho da foto
-        caminho_foto = os.path.join(pasta_fotos, foto_a_excluir) # Caminho real + pasta (DCIM)
-        os.remove(caminho_foto)  # Remove o arquivo
-        lista_fotos.pop(val_foto_atual)  # Remove da lista
-        print(f"Foto excluida: {foto_a_excluir}")
+    global val_foto_atual, modo_EXCLUIR
+    fotos = carregar_fotos()  # Recarrega a lista de fotos do disco
+    
+    if fotos and modo_EXCLUIR:
+        # Garante que o índice esteja dentro do intervalo válido
+        val_foto_atual = max(0, min(val_foto_atual, len(fotos) - 1))
         
-        # Ajusta o indice para evitar valores fora do intervalo
-        if val_foto_atual >= len(lista_fotos):
-            val_foto_atual = max(0, len(lista_fotos) - 1)
+        foto_a_excluir = os.path.join(pasta_fotos, fotos[val_foto_atual])  # Caminho completo da foto
+        try:
+            os.remove(foto_a_excluir)  # Remove o arquivo do disco
+            print(f"Foto excluída: {foto_a_excluir}")
+        except FileNotFoundError:
+            print(f"Erro: Arquivo {foto_a_excluir} não encontrado.")
         
-        # Atualiza a galeria ou limpa a tela se nao houver mais fotos
-        if lista_fotos:
+        # Atualiza o índice para evitar valores fora do intervalo
+        fotos = carregar_fotos()  # Atualiza a lista após excluir
+        if val_foto_atual >= len(fotos):
+            val_foto_atual = max(0, len(fotos) - 1)
+        
+        # Atualiza a galeria ou limpa a tela se não houver mais fotos
+        if fotos:
             mostra_galeria()
         else:
-            disp.clear()  # Limpa o display se nao houver mais fotos
+            disp.clear()  # Limpa o display se não houver mais fotos
             print("Nenhuma foto restante.")
         
-        modo_EXCLUIR = False  # Sai do modo de exclusao
+        modo_EXCLUIR = False  # Sai do modo de exclusão
+
 
 
 # Funcao para manipular ISO e Vel. Obturador
