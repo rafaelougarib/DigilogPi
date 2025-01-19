@@ -70,7 +70,7 @@ def tira_foto():
     nomefoto = f"DCIM/photo_{data_ext.strftime('%Y%m%d_%H%M%S')}.jpg"
     
     # Comando para capturar a imagem com o libcamera usando ISO e Vel. Obturador
-    subprocess.run(f"libcamera-still -o {nomefoto} --width 2592 --height 1944 --shutter {VelOBT_atual * 1000000} --gain {ISO_atual:.1f} --awbgains 1.2,1.2 --immediate --denoise off --nopreview", shell=True)
+    subprocess.run(f"libcamera-still -o {nomefoto} --width 2592 --height 1944 --shutter {VelOBT_atual * 1000000} --gain {ISO_atual:.1f} --awbgains 1.2,1.2 --immediate --denoise off --nopreview --mode 2592:1944:SGBRG10 --no-raw --encoding jpg --quality 93", shell=True)
     
     # Salva na galeria
     lista_fotos.append(nomefoto) #Lista para acompanhar o que o usuario veê
@@ -163,8 +163,6 @@ def excluir_foto():
         
         modo_EXCLUIR = False  # Sai do modo de exclusão
 
-
-
 # Funcao para manipular ISO e Vel. Obturador
 def mais_ISO_VelOBT():
     global ISO_atual, VelOBT_atual
@@ -172,6 +170,7 @@ def mais_ISO_VelOBT():
         ISO_atual = val_ISOs[(val_ISOs.index(ISO_atual) + 1) % len(val_ISOs)]
     else:  # Alterna para Vel. Obturador
         VelOBT_atual = val_VelOBT[(val_VelOBT.index(VelOBT_atual) + 1) % len(val_VelOBT)]
+    mostra_val()  # Atualiza a exibição imediatamente
 
 def menos_ISO_VelOBT():
     global ISO_atual, VelOBT_atual
@@ -179,21 +178,25 @@ def menos_ISO_VelOBT():
         ISO_atual = val_ISOs[(val_ISOs.index(ISO_atual) - 1) % len(val_ISOs)]
     else:  # Alterna para Vel. Obturador
         VelOBT_atual = val_VelOBT[(val_VelOBT.index(VelOBT_atual) - 1) % len(val_VelOBT)]
-
+    mostra_val()  # Atualiza a exibição imediatamente
+    
 # Funcao para alternar entre ISO e Vel. Obturador
 def alternar_ISO_VelOBT():
     global sw_ISO_VelOBT
     sw_ISO_VelOBT = not sw_ISO_VelOBT
+    mostra_val()
 
 
 # Funcao para mostrar aviso de exclusao
 def mostra_ALERTA_excluir():
     disp.clear()
     font = ImageFont.load_default()
-    img_ALERTA = Image.new('RGB', (disp.width, disp.height), color="black")
+    img_ALERTA = Image.new('RGB', (disp.width, disp.height), color="red")  # Cor de destaque para exclusão
     draw = ImageDraw.Draw(img_ALERTA)
-    draw.text((10, 10), "Aperte OK para confirmar", font=font, fill="yellow")
+    draw.text((10, 10), "Confirmar exclusão?", font=font, fill="yellow")
+    draw.text((10, 50), "OK: Excluir | Voltar: Cancelar", font=font, fill="yellow")
     disp.display(img_ALERTA)
+    print("Aguardando confirmação para excluir...")
     
 # Funcao para desligar o sistema
 def desliga_sistema():
@@ -211,7 +214,6 @@ def desliga_sistema():
 sw_ISO_VelOBT = True
 try:
     while True:
-        # Exibir configuracoes de captura no modo de captura
         if not modo_GALERIA:
             mostra_val()
 
@@ -219,27 +221,38 @@ try:
         if GPIO.input(BOT_OK) == GPIO.LOW:
             if modo_GALERIA:
                 if modo_EXCLUIR:
-                    excluir_foto()  # Exclui a foto na galeria
+                    excluir_foto()  # Exclui a foto
+                    modo_EXCLUIR = False  # Sai do modo de exclusão
+                else:
+                    time.sleep(0.2)  # Pequeno debounce
             else:
                 tira_foto()  # Captura a foto
                 time.sleep(0.2)
         
-        if GPIO.input(BOT_ISO_OBT_UP) == GPIO.LOW and modo_GALERIA:
-            val_foto_atual += 1  # Proxima foto
-            mostra_galeria()
+        if GPIO.input(BOT_ISO_OBT_UP) == GPIO.LOW:
+            if modo_GALERIA:
+                if not modo_EXCLUIR:  # Apenas alterna fotos no modo galeria
+                    val_foto_atual += 1  # Próxima foto
+                    mostra_galeria()
+            else:
+                mais_ISO_VelOBT()
             time.sleep(0.2)
         
-        if GPIO.input(BOT_ISO_OBT_DOWN) == GPIO.LOW and modo_GALERIA:
-            val_foto_atual -= 1  # Foto anterior
-            mostra_galeria()
+        if GPIO.input(BOT_ISO_OBT_DOWN) == GPIO.LOW:
+            if modo_GALERIA:
+                if not modo_EXCLUIR:  # Apenas alterna fotos no modo galeria
+                    val_foto_atual -= 1  # Foto anterior
+                    mostra_galeria()
+            else:
+                menos_ISO_VelOBT()
             time.sleep(0.2)
         
         if GPIO.input(BOT_MENU_VOLTAR) == GPIO.LOW:
-            if modo_EXCLUIR:  # Se estiver no modo de exclusao
-                modo_EXCLUIR = False  # Cancela o modo de exclusao
-                mostra_galeria()  # Volta para a galeria
+            if modo_EXCLUIR:  # Cancela exclusão
+                modo_EXCLUIR = False
+                mostra_galeria()
+                print("Exclusão cancelada.")
             else:
-                # Alterna entre o modo de captura e galeria, comportamento atual
                 modo_GALERIA = not modo_GALERIA
                 if modo_GALERIA:
                     mostra_galeria()
@@ -249,16 +262,15 @@ try:
         
         if GPIO.input(BOT_TROCA_EXCL) == GPIO.LOW:
             if modo_GALERIA:
-                mostra_ALERTA_excluir()  # Exibe a mensagem de alerta
+                mostra_ALERTA_excluir()  # Mostra alerta para excluir
                 modo_EXCLUIR = True
-                time.sleep(0.5)
-            alternar_ISO_VelOBT()  # Alterna entre ISO e Vel. Obturador
-            time.sleep(0.2)
-            
+            else:
+                alternar_ISO_VelOBT()
+            time.sleep(0.5)  # Debounce mais longo para ações críticas
+        
         if GPIO.input(BOT_MENU_VOLTAR) == GPIO.LOW and GPIO.input(BOT_TROCA_EXCL) == GPIO.LOW:
             desliga_sistema()
             break
 
 except KeyboardInterrupt:
     GPIO.cleanup()
-
