@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-versão: 18012025v4
+versão: 20012025v5
 autor: Rafael L
 "suporte" e consulta: GPT4o-mini (acabei usando)
 
@@ -70,27 +70,29 @@ def tira_foto():
     nomefoto = f"DCIM/photo_{data_ext.strftime('%Y%m%d_%H%M%S')}.jpg"
     
     # Comando para capturar a imagem com o libcamera usando ISO e Vel. Obturador
-    subprocess.run(f"libcamera-still -o {nomefoto} --width 2592 --height 1944 --shutter {VelOBT_atual * 1000000} --gain {ISO_atual:.1f} --awbgains 1.2,1.2 --immediate --denoise off --nopreview --mode 2592:1944:SGBRG10 --no-raw --encoding jpg --quality 93", shell=True)
+    subprocess.run(
+        f"libcamera-still -o {nomefoto} --width 2592 --height 1944 --shutter {VelOBT_atual * 1000000} --gain {ISO_atual:.1f} --awbgains 1.2,1.2 --immediate --denoise off --nopreview --mode 2592:1944:SGBRG10 --no-raw --encoding jpg --quality 93",
+        shell=True
+    )
     
     # Salva na galeria
-    lista_fotos.append(nomefoto) #Lista para acompanhar o que o usuario veê
-    val_foto_atual = len(lista_fotos) - 1
+    lista_fotos.append(nomefoto)  # Lista para acompanhar o que o usuario vê
     hora_ult_foto = data_ext
     print(f"Foto capturada: {nomefoto}")
     
-    time.sleep(1)
-    # Exibir preview da foto no display por 4 segundos
+    # Exibir preview da foto no display
     img = Image.open(nomefoto)
-    img = img.resize((disp.width, disp.height))
-    draw = ImageDraw.Draw(img)
+    img.thumbnail((disp.width, disp.height))  # Ajusta ao display mantendo o aspecto
+    img_preview = Image.new('RGB', (disp.width, disp.height), color="black")
+    img_preview.paste(img, ((disp.width - img.width) // 2, (disp.height - img.height) // 2))
+
+    # Adicionar data e hora no rodapé da imagem exibida (apenas para o display)
+    draw = ImageDraw.Draw(img_preview)
     font = ImageFont.load_default()
-    
-    # Adicionar data e hora na imagem no rodapé
     timestamp = data_ext.strftime('%Y-%m-%d %H:%M:%S')
-    draw.text((10, img.height - 20), f"Data: {timestamp}", font=font, fill="yellow")
-    img.save(nomefoto)
+    draw.text((10, disp.height - 20), timestamp, font=font, fill="yellow")
     
-    disp.display(img)
+    disp.display(img_preview)
     time.sleep(4)
     disp.clear()
 
@@ -113,25 +115,27 @@ def carregar_fotos():
         key=lambda x: os.path.getctime(os.path.join(pasta_fotos, x))
     )
     return fotos
-
 # Funcao para exibir a galeria de fotos
 def mostra_galeria():
     global val_foto_atual
     fotos = carregar_fotos()
     
     if fotos:
-        val_foto_atual = max(0, min(val_foto_atual, len(fotos) - 1))  # Garantir que o indice esteja valido
+        val_foto_atual = max(0, min(val_foto_atual, len(fotos) - 1))  # Garantir que o índice esteja válido
         caminho_foto = os.path.join(pasta_fotos, fotos[val_foto_atual])
         
-        img = Image.open(caminho_foto).resize((disp.width, disp.height))
-        draw = ImageDraw.Draw(img)
-        font = ImageFont.load_default()
-
-        # Mostrar nome e data
-        timestamp = datetime.fromtimestamp(os.path.getctime(caminho_foto)).strftime('%Y-%m-%d %H:%M:%S')
-        draw.text((10, img.height - 20), f"Data: {timestamp}", font=font, fill="yellow")
+        img = Image.open(caminho_foto)
+        img.thumbnail((disp.width, disp.height))  # Ajusta ao display mantendo o aspecto
+        img_preview = Image.new('RGB', (disp.width, disp.height), color="black")
+        img_preview.paste(img, ((disp.width - img.width) // 2, (disp.height - img.height) // 2))
         
-        disp.display(img)
+        # Mostrar data e hora da foto baseada nos metadados
+        draw = ImageDraw.Draw(img_preview)
+        font = ImageFont.load_default()
+        timestamp = datetime.fromtimestamp(os.path.getctime(caminho_foto)).strftime('%Y-%m-%d %H:%M:%S')
+        draw.text((10, disp.height - 20), timestamp, font=font, fill="yellow")
+        
+        disp.display(img_preview)
 
 # Funcao para excluir a foto (usando a tática da galeria)
 def excluir_foto():
