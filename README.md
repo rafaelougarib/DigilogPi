@@ -50,7 +50,7 @@ ___
 + A implementação do código no Raspberry (para não depender de controle externo) depende de adicioná-lo no boot
 com rc.local (ou com service), e ativar o login automático (faça testes antes de definir tudo!)
 
-+ Em uma lente como 40mm, o efeito de crop com o sensor usado (OV5647) entrega ~273mm, se quiser fazer o cálculo, calcule a diagonal do sensor/filme esperado (nesse caso ~43,2mm) dividido pelo usado (~6,35mm) 
++ Em uma lente como 40mm, o efeito de crop com o sensor usado (OV5647) entrega ~273mm, se quiser fazer o cálculo, calcule a diagonal do sensor/filme esperado (nesse caso ~43,2mm) dividido pelo usado (~6,35mm) e multiplique o valor da lente (40mm no caso usado) pelo resultado...
 
 + O módulo do sensor deve estar "puro", nesse caso sem lente, então tome cuidado na hora de retirar e tente manter o filtro de infra-vermelho ou coloque um na lente em que estiver usando, ao menos que realmente queira o efeito ou explorar uma câmera térmica, que acaba sendo bem legal também!
 
